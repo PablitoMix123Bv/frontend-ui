@@ -408,12 +408,13 @@ export default function MissionHub() {
                 style={{
                   fontSize: '11px',
                   fontFamily: 'var(--font-mono)',
-                  background: 'rgba(13, 19, 33, 0.85)',
-                  border: '1px solid #1c2640',
-                  color: '#e2e8f0',
+                  background: focusPlanet ? 'rgba(79, 142, 247, 0.25)' : 'rgba(13, 19, 33, 0.85)',
+                  border: focusPlanet ? '1px solid #4f8ef7' : '1px solid #1c2640',
+                  color: focusPlanet ? '#93c5fd' : '#e2e8f0',
                   padding: '4px 10px',
                   borderRadius: '4px',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 ⟳ Reset View / Zoom Out
@@ -444,7 +445,7 @@ export default function MissionHub() {
               return (
                 <button
                   key={p.name}
-                  onClick={() => setFocusPlanet(active ? null : p.name)}
+                  onClick={() => setFocusPlanet((prev) => (prev === p.name ? null : p.name))}
                   style={{
                     fontSize: '10px',
                     fontFamily: 'var(--font-mono)',
@@ -457,6 +458,7 @@ export default function MissionHub() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: p.color }} />
@@ -496,12 +498,19 @@ export default function MissionHub() {
             transform: 'translateX(-50%)',
             fontSize: '10px',
             fontFamily: 'var(--font-mono)',
-            color: '#475569',
+            color: focusPlanet ? '#38bdf8' : '#475569',
             letterSpacing: '1px',
             pointerEvents: 'none',
+            background: focusPlanet ? 'rgba(13, 19, 33, 0.7)' : 'transparent',
+            padding: focusPlanet ? '4px 12px' : '0',
+            borderRadius: '4px',
+            border: focusPlanet ? '1px solid rgba(56, 189, 248, 0.25)' : 'none',
+            transition: 'all 0.2s ease',
           }}
         >
-          CLICK PLANET OR CHIP TO ENGAGE ORBITAL CAMERA LERPS
+          {focusPlanet
+            ? `● FOCUSING: ${focusPlanet.toUpperCase()} · CLICK PLANET OR CHIP AGAIN TO ZOOM OUT`
+            : 'CLICK PLANET OR CHIP TO ENGAGE ORBITAL CAMERA LERPS'}
         </div>
 
         {/* Floating Scenario HUD (bottom-left) */}

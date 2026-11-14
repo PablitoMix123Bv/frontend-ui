@@ -1,6 +1,6 @@
-import { Suspense, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 export default function PlanetModel({
@@ -14,19 +14,38 @@ export default function PlanetModel({
   isSelected = false,
   onClick,
   paused = false,
+  registerPlanet,
 }) {
   const groupRef = useRef();
   const meshRef = useRef();
+  const ringRef = useRef();
 
   // Load the GLB model from /models/planetas/...
   const { scene } = useGLTF(model);
 
+  // Register this planet's mesh reference so camera controller can track its world coordinates
+  useEffect(() => {
+    if (meshRef.current && registerPlanet) {
+      registerPlanet(name, meshRef.current);
+    }
+  }, [name, registerPlanet]);
+
   useFrame((state, delta) => {
-    if (!paused && groupRef.current && distance > 0) {
+    // When selected, pause orbital revolution so the camera frames it stably
+    const canOrbit = !paused && !isSelected && distance > 0;
+    if (canOrbit && groupRef.current) {
       groupRef.current.rotation.y += orbitSpeed * 15 * delta;
     }
+
+    // Axial spin continues so the planet rotates on its own axis
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.5 * delta;
+      meshRef.current.rotation.y += (isSun ? 0.2 : 0.45) * delta;
+    }
+
+    // Gentle pulse animation for the selection ring
+    if (isSelected && ringRef.current) {
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.05;
+      ringRef.current.scale.set(pulse, pulse, pulse);
     }
   });
 
@@ -43,22 +62,34 @@ export default function PlanetModel({
           e.stopPropagation();
           onClick?.(name);
         }}
-        onPointerOver={() => (document.body.style.cursor = 'pointer')}
-        onPointerOut={() => (document.body.style.cursor = 'auto')}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'auto';
+        }}
       >
         <primitive object={clonedScene} />
 
         {/* Emissive glow for Sun */}
         {isSun && (
-          <pointLight color="#fbbf24" intensity={80} distance={150} decay={2} />
+          <pointLight color="#fbbf24" intensity={100} distance={160} decay={1.8} />
         )}
 
-        {/* Selection indicator ring */}
+        {/* Selection indicator ring with animated pulsing */}
         {isSelected && (
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[1.4, 1.6, 32]} />
-            <meshBasicMaterial color="#4f8ef7" side={THREE.DoubleSide} />
-          </mesh>
+          <group ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh>
+              <ringGeometry args={[1.35, 1.48, 48]} />
+              <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.85} />
+            </mesh>
+            <mesh>
+              <ringGeometry args={[1.55, 1.6, 48]} />
+              <meshBasicMaterial color="#4f8ef7" side={THREE.DoubleSide} transparent opacity={0.4} />
+            </mesh>
+          </group>
         )}
       </group>
     </group>
