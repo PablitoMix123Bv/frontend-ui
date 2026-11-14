@@ -21,11 +21,20 @@ function OrbitRing({ radius, color = '#223354', opacity = 0.35 }) {
   );
 }
 
-function CameraController({ focusPlanet, planetObjectsRef, controlsRef }) {
-  const defaultTarget = useMemo(() => new THREE.Vector3(4, 0, 0), []);
-  const defaultPosition = useMemo(() => new THREE.Vector3(14, 18, 28), []);
+function CameraController({ focusPlanet, planetObjectsRef, controlsRef, panelCollapsed = false }) {
+  // Center camera at (0, 0, 0) when panel is collapsed (100% width),
+  // or offset to (4, 0, 0) when panel is open to compensate for the left analytics drawer
+  const overviewTarget = useMemo(
+    () => (panelCollapsed ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(4, 0, 0)),
+    [panelCollapsed]
+  );
+  const overviewPosition = useMemo(
+    () => (panelCollapsed ? new THREE.Vector3(0, 18, 30) : new THREE.Vector3(14, 18, 28)),
+    [panelCollapsed]
+  );
 
   const prevFocusRef = useRef(null);
+  const prevPanelCollapsedRef = useRef(panelCollapsed);
   const isTransitioningRef = useRef(false);
   const targetCamPosRef = useRef(new THREE.Vector3());
 
@@ -46,7 +55,17 @@ function CameraController({ focusPlanet, planetObjectsRef, controlsRef }) {
     };
   }, [controlsRef]);
 
-  // When focusPlanet changes, trigger a smooth flight transition
+  // When panelCollapsed changes while in overview mode, trigger smooth camera re-centering
+  useEffect(() => {
+    if (prevPanelCollapsedRef.current !== panelCollapsed) {
+      prevPanelCollapsedRef.current = panelCollapsed;
+      if (!focusPlanet) {
+        isTransitioningRef.current = true;
+      }
+    }
+  }, [panelCollapsed, focusPlanet]);
+
+  // When focusPlanet changes, trigger smooth flight transition
   useEffect(() => {
     if (focusPlanet !== prevFocusRef.current) {
       prevFocusRef.current = focusPlanet;
@@ -67,10 +86,10 @@ function CameraController({ focusPlanet, planetObjectsRef, controlsRef }) {
           worldPos.z + zoomDist * 0.85
         );
       } else {
-        targetCamPosRef.current.copy(defaultPosition);
+        targetCamPosRef.current.copy(overviewPosition);
       }
     }
-  }, [focusPlanet, planetObjectsRef, defaultPosition]);
+  }, [focusPlanet, planetObjectsRef, overviewPosition]);
 
   useFrame((state, delta) => {
     const dampFactor = Math.min(1, 1 - Math.exp(-4.5 * delta));
@@ -100,14 +119,14 @@ function CameraController({ focusPlanet, planetObjectsRef, controlsRef }) {
         controls.target.copy(worldPos);
       }
     } else {
-      // General overview
+      // General overview: dynamically shifts between centered (0,0,0) and offset (4,0,0)
       if (isTransitioningRef.current) {
-        controls.target.lerp(defaultTarget, dampFactor);
-        state.camera.position.lerp(defaultPosition, dampFactor);
+        controls.target.lerp(overviewTarget, dampFactor);
+        state.camera.position.lerp(overviewPosition, dampFactor);
 
         if (
-          controls.target.distanceTo(defaultTarget) < 0.05 &&
-          state.camera.position.distanceTo(defaultPosition) < 0.1
+          controls.target.distanceTo(overviewTarget) < 0.05 &&
+          state.camera.position.distanceTo(overviewPosition) < 0.1
         ) {
           isTransitioningRef.current = false;
         }
@@ -192,7 +211,7 @@ function EarthMoonSystem({
   );
 }
 
-function SceneContent({ paused }) {
+function SceneContent({ paused, panelCollapsed = false }) {
   const { focusPlanet, setFocusPlanet } = useApp();
   const controlsRef = useRef();
   const planetObjectsRef = useRef({});
@@ -222,7 +241,7 @@ function SceneContent({ paused }) {
       <OrbitControls
         ref={controlsRef}
         makeDefault
-        target={[4, 0, 0]}
+        target={panelCollapsed ? [0, 0, 0] : [4, 0, 0]}
         minDistance={1.2}
         maxDistance={90}
         maxPolarAngle={Math.PI / 2 + 0.15}
@@ -230,11 +249,12 @@ function SceneContent({ paused }) {
         dampingFactor={0.05}
       />
 
-      {/* Camera transition controller */}
+      {/* Camera transition controller with dynamic panel awareness */}
       <CameraController
         focusPlanet={focusPlanet}
         planetObjectsRef={planetObjectsRef}
         controlsRef={controlsRef}
+        panelCollapsed={panelCollapsed}
       />
 
       <Stars radius={120} depth={60} count={3000} factor={4} saturation={0} fade speed={1} />
@@ -282,15 +302,15 @@ function SceneContent({ paused }) {
   );
 }
 
-export default function SolarSystemScene({ paused = false }) {
+export default function SolarSystemScene({ paused = false, panelCollapsed = false }) {
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas
-        camera={{ position: [14, 18, 28], fov: 42 }}
+        camera={{ position: panelCollapsed ? [0, 18, 30] : [14, 18, 28], fov: 42 }}
         gl={{ antialias: true, alpha: false }}
         style={{ width: '100%', height: '100%', background: '#040711' }}
       >
-        <SceneContent paused={paused} />
+        <SceneContent paused={paused} panelCollapsed={panelCollapsed} />
       </Canvas>
     </div>
   );

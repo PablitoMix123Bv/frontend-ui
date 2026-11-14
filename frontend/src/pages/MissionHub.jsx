@@ -21,6 +21,7 @@ export default function MissionHub() {
 
   const [paused, setPaused] = useState(false);
   const [weightsOpen, setWeightsOpen] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
   const navigate = useNavigate();
 
   const ranked = useMemo(() => {
@@ -28,39 +29,86 @@ export default function MissionHub() {
   }, [scenarioKey, weights, category]);
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
-      {/* ── Left Analytical Panel ── */}
+    <div style={{ display: 'flex', width: '100%', height: 'calc(100vh - 80px)', overflow: 'hidden', position: 'relative' }}>
+      {/* ── Left Analytical Panel (Slidable Container) ── */}
       <div
         style={{
-          width: '45%',
-          minWidth: '440px',
+          width: panelCollapsed ? '0px' : '480px',
+          minWidth: panelCollapsed ? '0px' : '440px',
           maxWidth: '540px',
           height: '100%',
-          overflowY: 'auto',
-          padding: '20px 24px',
-          borderRight: '1px solid #1c2640',
-          background: '#0a0f1e',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
+          flexShrink: 0,
+          position: 'relative',
+          transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          zIndex: 25,
         }}
       >
-        {/* Regime Telemetry Header */}
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '11px',
-              fontFamily: 'var(--font-mono)',
-              color: '#4f8ef7',
-              letterSpacing: '0.8px',
-              marginBottom: '4px',
-            }}
-          >
-            <span>● REGIME TELEMETRY PROFILE // {scenario.code}</span>
-            <span style={{ color: '#8892a8' }}>SYS_ID: {scenario.sysId}</span>
-          </div>
+        {/* Inner Content with Translate-X Slide Animation */}
+        <div
+          style={{
+            width: '480px',
+            height: '100%',
+            overflowY: 'auto',
+            padding: '20px 24px',
+            borderRight: '1px solid #1c2640',
+            background: '#0a0f1e',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            transform: panelCollapsed ? 'translateX(-100%)' : 'translateX(0)',
+            opacity: panelCollapsed ? 0 : 1,
+            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+            pointerEvents: panelCollapsed ? 'none' : 'auto',
+          }}
+        >
+          {/* Regime Telemetry Header */}
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)',
+                color: '#4f8ef7',
+                letterSpacing: '0.8px',
+                marginBottom: '4px',
+              }}
+            >
+              <span>● REGIME TELEMETRY PROFILE // {scenario.code}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#8892a8' }}>SYS_ID: {scenario.sysId}</span>
+                <button
+                  onClick={() => setPanelCollapsed(true)}
+                  title="Hide analytical panel"
+                  style={{
+                    fontSize: '10px',
+                    fontFamily: 'var(--font-mono)',
+                    background: '#111827',
+                    border: '1px solid #1c2640',
+                    color: '#94a3b8',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onPointerOver={(e) => {
+                    e.currentTarget.style.borderColor = '#4f8ef7';
+                    e.currentTarget.style.color = '#38bdf8';
+                  }}
+                  onPointerOut={(e) => {
+                    e.currentTarget.style.borderColor = '#1c2640';
+                    e.currentTarget.style.color = '#94a3b8';
+                  }}
+                >
+                  <span>«</span>
+                  <span>Hide Panel</span>
+                </button>
+              </div>
+            </div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.3px', margin: '2px 0 6px 0' }}>
             {scenario.label} Regime
           </h1>
@@ -350,9 +398,58 @@ export default function MissionHub() {
           <span style={{ color: '#34d399' }}>● CONFIDENCE: 98.4%</span>
         </div>
       </div>
+    </div>
 
       {/* ── Right 3D Visualization Area ── */}
-      <div style={{ flex: 1, position: 'relative', height: '100%', background: '#040711' }}>
+      <div style={{ flex: 1, position: 'relative', height: '100%', background: '#040711', transition: 'width 0.4s ease' }}>
+        {/* Discreet Edge Tab Button to toggle the analytical panel */}
+        <button
+          onClick={() => setPanelCollapsed(!panelCollapsed)}
+          title={panelCollapsed ? "Show Telemetry Panel" : "Hide Analytical Panel"}
+          style={{
+            position: 'absolute',
+            top: '76px',
+            left: '0px',
+            zIndex: 35,
+            background: 'rgba(13, 19, 33, 0.94)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid #1c2640',
+            borderLeft: 'none',
+            borderRadius: '0 6px 6px 0',
+            padding: '8px 5px',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            boxShadow: '3px 0 12px rgba(0,0,0,0.6)',
+            transition: 'all 0.2s ease',
+          }}
+          onPointerOver={(e) => {
+            e.currentTarget.style.borderColor = '#38bdf8';
+            e.currentTarget.style.color = '#38bdf8';
+          }}
+          onPointerOut={(e) => {
+            e.currentTarget.style.borderColor = '#1c2640';
+            e.currentTarget.style.color = '#94a3b8';
+          }}
+        >
+          <span style={{ fontSize: '13px', color: '#38bdf8', lineHeight: 1 }}>{panelCollapsed ? '»' : '«'}</span>
+          <span
+            style={{
+              fontSize: '8px',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              writingMode: 'vertical-rl',
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+            }}
+          >
+            {panelCollapsed ? 'Telemetry' : 'Hide Panel'}
+          </span>
+        </button>
+
         {/* Top Floating Simulation Controls */}
         <div
           style={{
@@ -369,22 +466,58 @@ export default function MissionHub() {
         >
           {/* Main header row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                fontFamily: 'var(--font-mono)',
-                color: '#34d399',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(13, 19, 33, 0.8)',
-                backdropFilter: 'blur(8px)',
-                padding: '4px 10px',
-                borderRadius: '4px',
-                border: '1px solid #1c2640',
-              }}
-            >
-              <span>●</span> SYSTEM SIMULATION: 3D HELIORADIAL PLANETARY DYNAMICS [SKETCH]
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Show Telemetry button when panel is collapsed */}
+              {panelCollapsed && (
+                <button
+                  onClick={() => setPanelCollapsed(false)}
+                  style={{
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    background: 'rgba(13, 19, 33, 0.92)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid #38bdf8',
+                    color: '#38bdf8',
+                    padding: '4px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 0 12px rgba(56, 189, 248, 0.25)',
+                    pointerEvents: 'auto',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onPointerOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)';
+                  }}
+                  onPointerOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(13, 19, 33, 0.92)';
+                  }}
+                >
+                  <span>»</span>
+                  <span>Show Telemetry</span>
+                </button>
+              )}
+
+              <div
+                style={{
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
+                  color: '#34d399',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(13, 19, 33, 0.8)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  border: '1px solid #1c2640',
+                }}
+              >
+                <span>●</span> SYSTEM SIMULATION: 3D HELIORADIAL PLANETARY DYNAMICS [SKETCH]
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto' }}>
@@ -486,8 +619,8 @@ export default function MissionHub() {
           </div>
         </div>
 
-        {/* 3D Solar System Canvas */}
-        <SolarSystemScene paused={paused} />
+        {/* 3D Solar System Canvas with dynamic width & camera centering */}
+        <SolarSystemScene paused={paused} panelCollapsed={panelCollapsed} />
 
         {/* Center overlay hint */}
         <div
