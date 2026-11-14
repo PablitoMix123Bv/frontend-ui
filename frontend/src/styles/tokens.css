@@ -1,0 +1,18 @@
+:root {
+  /* NASA-inspired dark palette */
+  --color-bg: #0a0e1a;
+  --color-surface: #111827;
+  --color-border: #1f2937;
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-accent: #4f8ef7;
+  --color-accent-2: #fc3d21; /* NASA red */
+  --color-navy: #0b3d91;     /* NASA blue */
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-xl: 1.5rem;
+
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+}
